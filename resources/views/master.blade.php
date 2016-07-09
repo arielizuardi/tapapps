@@ -13,6 +13,29 @@
             -webkit-filter: grayscale(100%); /* Chrome, Safari, Opera */
             filter: grayscale(100%);
         }
+
+        .thumb {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .thumb img {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            height: 100%;
+            width: auto;
+            -webkit-transform: translate(-50%,-50%);
+            -ms-transform: translate(-50%,-50%);
+            transform: translate(-50%,-50%);
+        }
+        .thumb img.portrait {
+            width: 100%;
+            height: auto;
+        }
+
     </style>
 
 </head>
@@ -25,8 +48,8 @@
     </div>
     <template id="imagelist-template">
         <div class="row">
-            <div v-for="image in images" :class="{ 'col-lg-3': true, 'col-md-4': true, 'col-xs-6': true }" style="margin-bottom:30px;">
-                <img @click="pickImage(image)" :src="image.url" :class="{'img-responsive': true, 'clicked': image.clicked, 'printed': image.printed }">
+            <div v-for="image in images" :class="{'thumb': true, 'col-lg-3': true, 'col-md-4': true, 'col-xs-6': true }" style="margin:30px;">
+                <img @click="pickImage(image)" :src="image.url" :class="{'clicked': image.clicked, 'printed': image.printed }">
             </div>
         </div>
     </template>
@@ -39,7 +62,6 @@
         new Vue({
             el: '#app',
             data: {
-                message: 'Hello world!',
                 images: [
                     {'url': 'http://lorempixel.com/300/300/transport', 'clicked': false, 'printed': false },
                     {'url': 'http://lorempixel.com/300/300/city', 'clicked': false , 'printed': true },
@@ -52,7 +74,16 @@
             },
             methods: {
                 loadMore: function () {
-                    this.images.push({'url': 'http://lorempixel.com/300/300/animals', 'clicked': false, 'printed': false });
+                    var self = this;
+
+                    Vue.http.get('/search').then(
+                    function (response) {
+                        self.images = self.images.concat(response.data);
+                        console.log(self.images);
+                    },
+                    function (response) {
+                        console.log('Cannot load images');
+                    });
                 }
             },
             components: {

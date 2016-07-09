@@ -14,3 +14,6 @@
 $app->get('/', function () use ($app) {
     return view('master');
 });
+
+
+$app->get('/search', ['uses' => 'ImageResourceController@fetchImages']);
