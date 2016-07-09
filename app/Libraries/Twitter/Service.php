@@ -44,6 +44,7 @@ class Service implements SearchContract
             }
         }
         //todo convert to Item object
+        //todo cursor for first and before
         return $result;
     }
 
