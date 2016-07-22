@@ -1,16 +1,16 @@
 <?php
-namespace App\Libraries\Path;
+namespace App\Libraries\OpenGraph;
 
 use Embed\Embed;
 
-class Path
+class OpenGraph
 {
-    public static function getImageFromMoment($moment_url)
+    public static function getImage($url)
     {
         $image_url = '';
 
         try {
-            $embed = Embed::create($moment_url);
+            $embed = Embed::create($url);
             $image_url = $embed->getImage();
         } catch (\Exception $ex) {
             \Log::error($ex);

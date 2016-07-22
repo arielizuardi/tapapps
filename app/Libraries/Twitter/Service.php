@@ -2,7 +2,9 @@
 namespace App\Libraries\Twitter;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
-use App\Libraries\Path\Path;
+use App\Libraries\Collection;
+use App\Libraries\Item;
+use App\Libraries\OpenGraph\OpenGraph;
 use App\Libraries\SearchContract;
 
 class Service implements SearchContract
@@ -11,7 +13,7 @@ class Service implements SearchContract
     protected $consumer_key;
     protected $consumer_secret;
     protected $access_token;
-    protected $access_token_secret ;
+    protected $access_token_secret;
 
     public function __construct()
     {
@@ -25,13 +27,16 @@ class Service implements SearchContract
 
     /**
      * @param $q string Query (could be hashtag or username)
+     * @param $num int num of returned result
+     * @param $next_cursor string
+     * @param $first_cursor string
      *
-     * @return array of Item
+     * @return Collection
      */
-    public function search($q)
+    public function search($q, $num = 20, $next_cursor = null, $first_cursor = null)
     {
-        $result = [];
-        $response = $this->connection->get('search/tweets', ['q' => $q]);
+        $image_urls = [];
+        $response = $this->connection->get('search/tweets', ['q' => $q, 'result_type' => 'recent', 'count' => $num]);
 
         if (empty($response->statuses)) {
             return [];
@@ -40,12 +45,37 @@ class Service implements SearchContract
         foreach ($response->statuses as $status) {
             $entities = $status->entities;
             if (!empty($entities)) {
-                $result = array_merge($result, $this->processEntities($entities));
+                $image_urls = array_merge($image_urls, $this->processEntities($entities));
             }
         }
-        //todo convert to Item object
-        //todo cursor for first and before
-        return $result;
+
+        $data = [];
+        foreach($image_urls as $image_url) {
+            $data[] = new Item($image_url);
+        }
+
+        $next_cursor = $this->encodeNextUrl($response);
+
+        return new Collection($data, $next_cursor);
+    }
+
+    protected function encodeNextUrl($response)
+    {
+        $metadata = $response->search_metadata;
+        $q = $metadata->query;
+
+        if (substr($q,0,2) == '%25') {
+            $q = substr($q, 2);
+        }
+
+        $next_cursor = [
+            'type' => 'twitter',
+            'max_id_str' => $metadata->max_id_str,
+            'q' => $q,
+            'count' => $metadata->count
+        ];
+
+        return $next_cursor;
     }
 
     protected function processEntities($twitter_entities)
@@ -63,10 +93,10 @@ class Service implements SearchContract
         if (!empty($twitter_entities->urls)) {
             foreach ($twitter_entities->urls as $url) {
                 $host = parse_url($url->expanded_url, PHP_URL_HOST);
-                if ($host == 'path.com') {
-                    $image_from_path = Path::getImageFromMoment($url->expanded_url);
-                    if (!empty($image_from_path)) {
-                        $image_urls[] = $image_from_path;
+                if ($host == 'path.com' or $host == 'instagram.com') {
+                    $image_from_og = OpenGraph::getImage($url->expanded_url);
+                    if (!empty($image_from_og)) {
+                        $image_urls[] = $image_from_og;
                     }
                 }
             }

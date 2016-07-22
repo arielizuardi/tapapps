@@ -36,13 +36,34 @@
             height: auto;
         }
 
+        .navbar-brand {
+            height: 70px;
+        }
+
     </style>
 
 </head>
 <body>
     <div id="app">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">
+                        <img alt="Brand" height="50px" src="http://tapandprintid.com/assets/images/logotap.png">
+                    </a>
+                </div>
+                <form class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search">
+                    </div>
+                    <button type="submit" class="btn btn-default">Submit</button>
+                </form>
+            </div>
+        </nav>
+
         <div class="container">
             <imagelist :clicked_images="clicked_images" :images="images"></imagelist>
+            <button @click="refresh()" type="submit" class="btn btn-primary">Refresh</button>
             <button @click="loadMore()" type="submit" class="btn btn-primary">Load More</button>
         </div>
     </div>
@@ -62,21 +83,17 @@
         new Vue({
             el: '#app',
             data: {
-                images: [
-                    {'url': 'http://lorempixel.com/300/300/transport', 'clicked': false, 'printed': false },
-                    {'url': 'http://lorempixel.com/300/300/city', 'clicked': false , 'printed': true },
-                    {'url': 'http://lorempixel.com/300/300/business', 'clicked': false , 'printed': false },
-                    {'url': 'http://lorempixel.com/300/300/food', 'clicked': false , 'printed': true },
-                    {'url': 'http://lorempixel.com/300/300/abstract', 'clicked': false , 'printed': false },
-                    {'url': 'http://lorempixel.com/300/300/cats', 'clicked': false , 'printed': false }
-                ],
+                images: [],
                 clicked_images: []
             },
             methods: {
+                refresh: function () {
+                    alert('refresh');
+                },
                 loadMore: function () {
                     var self = this;
 
-                    Vue.http.get('/search').then(
+                    Vue.http.get('/search?q=%23image').then(
                     function (response) {
                         self.images = self.images.concat(response.data);
                         console.log(self.images);
