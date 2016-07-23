@@ -3,9 +3,9 @@ namespace App\Libraries;
 
 class Collection
 {
-    protected $items;
-    protected $next_url;
-    protected $refresh_url;
+    public $items;
+    public $next_url;
+    public $refresh_url;
 
     public function __construct(array $items, $next_url = null, $refresh_url = null)
     {
@@ -16,6 +16,10 @@ class Collection
 
     public function toArray()
     {
+        if (empty($this->items)) {
+            $this->items = [];
+        }
+
         return [
            'data' => $this->items,
            'next_url' => $this->next_url,

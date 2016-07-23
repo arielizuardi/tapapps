@@ -10,8 +10,14 @@
         "vlucas/phpdotenv": "~2.2",
         "abraham/twitteroauth": "^0.6.4",
         "embed/embed": "^2.7",
-        "jenssegers/mongodb": "^3.0"
+        "jenssegers/mongodb": "^3.0",
+        "imagine/imagine": "^0.6.3",
+        "dompdf/dompdf": "^0.7.0",
+        "itbz/fpdi": "dev-master",
+        "clegginabox/pdf-merger": "dev-master",
+        "league/flysystem": "^1.0"
     },
+    "minimum-stability": "stable",
     "require-dev": {
         "fzaninotto/faker": "~1.4",
         "phpunit/phpunit": "~4.0"

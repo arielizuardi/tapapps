@@ -36,10 +36,15 @@ class Service implements SearchContract
     public function search($q, $num = 20, $next_cursor = null, $first_cursor = null)
     {
         $image_urls = [];
-        $response = $this->connection->get('search/tweets', ['q' => $q, 'result_type' => 'recent', 'count' => $num]);
+
+        if (!empty($next_cursor)) {
+            $response = $this->connection->get('search/tweets', ['q' => $q, 'result_type' => 'recent', 'count' => $num, 'max_id' => $next_cursor ]);
+        } else {
+            $response = $this->connection->get('search/tweets', ['q' => $q, 'result_type' => 'recent', 'count' => $num]);
+        }
 
         if (empty($response->statuses)) {
-            return [];
+            return new Collection([]);
         }
 
         foreach ($response->statuses as $status) {
@@ -69,10 +74,11 @@ class Service implements SearchContract
         }
 
         $next_cursor = [
-            'type' => 'twitter',
-            'max_id_str' => $metadata->max_id_str,
-            'q' => $q,
-            'count' => $metadata->count
+            'twitter' => [
+                'max_id_str' => $metadata->max_id_str,
+                'q' => $q,
+                'count' => $metadata->count
+            ]
         ];
 
         return $next_cursor;
