@@ -20,11 +20,14 @@ class Service implements SearchContract
     {
         $query = $this->db->collection('instagram')
             ->where('tag', '=', $q)
-            ->orderBy('timestamp', 'desc')
-            ->limit($num);
+            ->orderBy('_id', 'desc');
 
         if (!empty($next_cursor)) {
-            $query->where('timestamp', '<', $next_cursor);
+            $next_cursor = intval($next_cursor);
+            $query->skip($next_cursor)->take($num);
+        } else {
+            $next_cursor = 0;
+            $query->skip(0)->take($num);
         }
 
         $data = [];
@@ -34,9 +37,7 @@ class Service implements SearchContract
             $data[] = new Item($ig_object['url']);
         }
 
-        $next_timestamp = end($ig_objects)['timestamp'];
-        $next_cursor = $this->encodeNextUrl($q, $num, $next_timestamp);
-
+        $next_cursor = $this->encodeNextUrl($q, $num, (count($ig_objects) + $next_cursor));
         return new Collection($data, $next_cursor);
     }
 
