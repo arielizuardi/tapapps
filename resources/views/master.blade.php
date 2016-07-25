@@ -56,7 +56,6 @@
                     <input @keyup.enter="performSearch()" v-model="keywords" type="text" class="form-control" placeholder="Search">
                 </div>
                 <div class="navbar-form navbar-right">
-                    <input size="100" v-model="bg_image" type="text" class="form-control" placeholder="Background Image URL">
                     <button @click="print()" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-print" aria-hidden="true"></span>&nbsp;&nbsp; Generate PDF</button>
                 </div>
             </div>
@@ -85,7 +84,7 @@
         new Vue({
             el: '#app',
             data: {
-                bg_image: '',
+                bg_image: 'https://dl.dropboxusercontent.com/s/dvafp1cfc5lana6/frm_big_start-min.png?dl=0',
                 keywords: '',
                 cursor: '',
                 images: [],
