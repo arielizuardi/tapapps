@@ -56,11 +56,17 @@
                     <input @keyup.enter="performSearch()" v-model="keywords" type="text" class="form-control" placeholder="Search">
                 </div>
                 <div class="navbar-form navbar-right">
+                    <button @click="printget()" type="button" class="btn btn-primary">Refresh</button>
                     <input size="100" v-model="bg_image" type="text" class="form-control" placeholder="Background Image URL">
                     <button @click="print()" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-print" aria-hidden="true"></span>&nbsp;&nbsp; Generate PDF</button>
                 </div>
             </div>
         </nav>
+        <div v-show="show_generating" class="alert alert-info" role="alert">
+            <img src="gear.gif">
+            images is being processed (It will open several tabs)
+        </div>
+
 
         <div class="container">
             <imagelist :clicked_images="clicked_images" :images="images"></imagelist>
@@ -85,6 +91,7 @@
         new Vue({
             el: '#app',
             data: {
+                show_generating: false,
                 bg_image: '',
                 keywords: '',
                 cursor: '',
@@ -105,7 +112,7 @@
                     });
                 },
                 refresh: function () {
-                    alert('refresh');
+                    this.show_generating = !this.show_generating;
                 },
                 loadMore: function () {
                     var self = this;
@@ -143,10 +150,23 @@
                             }
                     );
                 },
+                printget: function () {
+                    var self = this;
+                    var queryurls = '';
+                    var base64queryurls = '';
+                    var base64bgurl = '';
+                    console.log(self.clicked_images.length);
+                    self.clicked_images.forEach(function (image) {
+                        queryurls += ' ' + image.url;
+                    });
+                    base64queryurls = btoa(queryurls);
+                    base64bgurl = btoa(self.bg_image);
+                    var win=window.open('/printget?urls=' + base64queryurls + '&bg_url=' + base64bgurl);
+                },
                 print: function () {
                     var self = this;
-
                     var urls = [];
+
                     self.clicked_images.forEach(function (image){
                         urls.push(image.url);
                     });
@@ -168,16 +188,39 @@
                         var contents = [];
 
                         results.forEach(function (imgUri, index) {
-                            if (index != 0) {
+                            if (index == (results.length - 1 )) {
                                 contents.push({
                                     image: imgUri,
                                     width: 250,
                                     height: 250,
                                     margin: [25, 80]
                                 });
+                            } else if (index != 0) {
+                                contents.push({
+                                    image: imgUri,
+                                    width: 250,
+                                    height: 250,
+                                    margin: [25, 80],
+                                    pageBreak: 'after'
+                                });
                             }
                         });
+                        //console.log(contents);
 
+                        var docDefinition = {
+                            pageSize: {'width': 300, height: 450},
+                            pageMargins: [0, 0, 0, 0],
+                            background: {
+                                image: results[0],
+                                width: 300,
+                                height: 450
+                            },
+                            content: contents
+                        };
+
+                        console.log(docDefinition);
+                        console.log(pdfMake.createPdf(docDefinition).open());
+                        /**
                         contents.forEach(function(content) {
                             var docDefinition = {
                                 pageSize: {'width': 300, height: 450},
@@ -190,9 +233,10 @@
                                 content: content
                             };
                             pdfMake.createPdf(docDefinition).open();
-                        });
+                        });*/
                     });
 
+                    //self.show_generating = false;
                 }
             },
             components: {

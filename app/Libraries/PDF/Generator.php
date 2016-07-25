@@ -11,22 +11,20 @@ class Generator
     public function __construct()
     {
         $this->pdf = new Dompdf();
-        $this->pdf->setCanvas(new TAPCPDF("4r", "portrait", $this->pdf));
+        $this->pdf->setPaper('4r');
     }
 
-    public function toDOMPDF()
+    public function toDOMPDF($source_dir)
     {
         /**
          * In CPDF I add 4r size(custom)
          */
-
+        $path = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
         // /app/images/polaroid
-        $files = Storage::files('/images/polaroid');
-
-        $i = 1; $html = '';
+        $files = Storage::files($source_dir);
+        $html = "<style>html { margin: 0px }</style>";
         foreach ($files as $file) {
-            $html = $html.'<img style="width:4in;height:6in;" src="https://dl.dropboxusercontent.com/s/t6ltq8c3a0fgxjx/FRAME%20URBANGIGS-FINAL-SBY-BATCH2-min.png?dl=0"><br>';
-            $i++;
+            $html = $html.'<img style="width:4in;height=6in;" src="file://'.$path.$file.'"><br>';
         }
 
         $this->pdf->loadHtml($html);

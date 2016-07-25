@@ -18,4 +18,4 @@ $app->get('/', function () use ($app) {
 
 $app->get('/search', ['uses' => 'ImageResourceController@fetchImages']);
 $app->post('/print', ['uses' => 'PrinterController@printImages']);
-$app->get('/test', ['uses' => 'PrinterController@test']);
+$app->get('/printget', ['uses' => 'PrinterController@printget']);
