@@ -58,13 +58,14 @@
                 <div class="navbar-form navbar-right">
                     <button @click="printget()" type="button" class="btn btn-primary">Refresh</button>
                     <input size="100" v-model="bg_image" type="text" class="form-control" placeholder="Background Image URL">
-                    <button @click="printpdfkit()" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-print" aria-hidden="true"></span>&nbsp;&nbsp; Generate PDF</button>
+                    <button @click="print()" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-print" aria-hidden="true"></span>&nbsp;&nbsp; Generate PDF</button>
                 </div>
             </div>
         </nav>
-        <div v-show="show_generating" class="alert alert-info" role="alert">
+
+        <div v-show="show_generating" class="container alert alert-info text-center" role="alert">
+            Generating PDF now
             <img src="gear.gif">
-            images is being processed (It will open several tabs)
         </div>
 
 
@@ -81,13 +82,8 @@
         </div>
     </template>
 
-    <script src="js/pdfmake.min.js"></script>
-    <script src="js/vfs_fonts.js"></script>
-    <script src="js/jspdf.min.js"></script>
-    <script src="js/pdfkit.js"></script>
+    <script src="js/pdfkit.min.js"></script>
     <script src="js/blob-stream.js"></script>
-
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.26/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/vue.resource/0.9.3/vue-resource.min.js"></script>
     <script src="https://www.promisejs.org/polyfills/promise-7.0.4.min.js"></script>
@@ -132,123 +128,18 @@
                         console.log('Cannot load images');
                     });
                 },
-                printViaBackend: function () {
-                    var self = this;
-                    let build_url = '/print';
-                    Vue.http.post(build_url, { 'images': self.clicked_images , 'bg_image': self.bg_image }).then(
-                            function (response) {
-                                if (response.status != 200) {
-                                    alert('failed to print');
-                                }
-
-                                var win=window.open('about:blank');
-
-                                with(win.document)
-                                {
-                                    open();
-                                    write(response.body);
-                                    close();
-                                }
-                            },
-                            function (response) {
-
-                            }
-                    );
-                },
-                printget: function () {
-                    var self = this;
-                    var queryurls = '';
-                    var base64queryurls = '';
-                    var base64bgurl = '';
-                    console.log(self.clicked_images.length);
-                    self.clicked_images.forEach(function (image) {
-                        queryurls += ' ' + image.url;
-                    });
-                    base64queryurls = btoa(queryurls);
-                    base64bgurl = btoa(self.bg_image);
-                    var win=window.open('/printget?urls=' + base64queryurls + '&bg_url=' + base64bgurl);
-                },
-                print: function () {
-                    var self = this;
-                    var urls = [];
-
-                    self.clicked_images.forEach(function (image){
-                        urls.push(image.url);
-                    });
-
-                    var bg_image = self.bg_image;
-                    //urls[1] = 'https://scontent-sin1-1.cdninstagram.com/t51.2885-15/s640x640/sh0.08/e35/c89.0.783.783/13715213_1166488023374682_1016950179_n.jpg?ig_cache_key=MTI5NTA1MDE4MzI1OTc1NTM4Mw%3D%3D.2.c';
-                    //urls[2] = 'https://scontent-sin1-1.cdninstagram.com/t51.2885-15/e35/c230.0.592.592/13167283_477756599093732_983811215_n.jpg?ig_cache_key=MTI1MjE0NTM3MDg1MjE0ODU2Mg%3D%3D.2.c';
-
-                    //put bg image to first element in urls
-                    urls.unshift(bg_image);
-
-                    var reqs = [];
-                    urls.forEach(function (myurl) {
-                        //add function to be called in promise
-                        reqs.push(getUri(myurl));
-                    });
-
-                    Promise.all(reqs).then(function (results) {
-                        var contents = [];
-
-                        results.forEach(function (imgUri, index) {
-                            if (index == (results.length - 1 )) {
-                                contents.push({
-                                    image: imgUri,
-                                    width: 250,
-                                    height: 250,
-                                    margin: [25, 80]
-                                });
-                            } else if (index != 0) {
-                                contents.push({
-                                    image: imgUri,
-                                    width: 250,
-                                    height: 250,
-                                    margin: [25, 80],
-                                    pageBreak: 'after'
-                                });
-                            }
-                        });
-                        //console.log(contents);
-
-                        var docDefinition = {
-                            pageSize: {'width': 300, height: 450},
-                            pageMargins: [0, 0, 0, 0],
-                            background: {
-                                image: results[0],
-                                width: 300,
-                                height: 450
-                            },
-                            content: contents
-                        };
-
-                        console.log(docDefinition);
-                        console.log(pdfMake.createPdf(docDefinition).open());
-                        /**
-                        contents.forEach(function(content) {
-                            var docDefinition = {
-                                pageSize: {'width': 300, height: 450},
-                                pageMargins: [0, 0, 0, 0],
-                                background: {
-                                    image: results[0],
-                                    width: 300,
-                                    height: 450
-                                },
-                                content: content
-                            };
-                            pdfMake.createPdf(docDefinition).open();
-                        });*/
-                    });
-
-                    //self.show_generating = false;
-                },
-                printpdfkit: function() {
+                print: function() {
 
                     var self = this;
                     var urls = [];
                     self.show_generating = true;
-                    self.clicked_images.forEach(function (image){
+                    self.clicked_images.forEach(function (image) {
+                        self.images.forEach(function (img) {
+                            if (image == img) {
+                                img.printed = true; //change image to grayscale
+                                img.clicked = false;
+                            }
+                        });
                         urls.push(image.url);
                     });
 
@@ -260,27 +151,21 @@
                     urls.forEach(function (myurl) {
                         //add function to be called in promise
                         reqs.push(getUri(myurl));
-
                     });
 
                     var saveData = (function () {
-                        var a = document.createElement("a");
-                        document.body.appendChild(a);
-                        a.style = "display: none";
                         return function (blob, fileName) {
                             var url = window.URL.createObjectURL(blob);
                             window.open(url);
-                            //a.href = url;
-                            //a.download = fileName;
-                            //a.click();
                             window.URL.revokeObjectURL(url);
                         };
                     }());
 
+                    //call all reqs functions
                     Promise.all(reqs).then(function (results) {
                         var doc = new PDFDocument({
                             size: [288, 432],
-                            margins : { // by default, all are 72
+                            margins: { // by default, all are 72/inch
                                 top: 0,
                                 bottom: 0,
                                 left: 0,
@@ -293,69 +178,25 @@
 
                         results.forEach(function (imgUri, index) {
                             if (index == 0) {
-
+                                //index 0 for background image
                             } else if (index == (results.length - 1)) {
-                                doc.image(results[0], 0, 0, { width: 288});
-                                doc.image(imgUri, 18, 72, { width: 252});
+                                doc.image(results[0], 0, 0, {width: 288});
+                                doc.image(imgUri, 18, 72, {width: 252});
 
                             } else {
-                                doc.image(results[0], 0, 0, { width: 288});
-                                doc.image(imgUri, 18, 72, { width: 252});
+                                doc.image(results[0], 0, 0, {width: 288});
+                                doc.image(imgUri, 18, 72, {width: 252});
                                 doc.addPage();
                             }
                         });
 
                         doc.end();
-
-                        stream.on('finish', function() {
-
+                        stream.on('finish', function () {
                             var blob = stream.toBlob('application/pdf');
-                            saveData(blob, 'aa.pdf');
-
-                            // iframe.src = stream.toBlobURL('application/pdf');
+                            saveData(blob, 'images.pdf');
                         });
-
                         self.show_generating = false;
-
-                    });
-
-                },
-                printjspdf: function () {
-                    var self = this;
-                    var urls = [];
-
-                    self.clicked_images.forEach(function (image){
-                        urls.push(image.url);
-                    });
-
-                    var bg_image = self.bg_image;
-                    //put bg image to first element in urls
-                    urls.unshift(bg_image);
-
-                    var reqs = [];
-                    urls.forEach(function (myurl) {
-                        //add function to be called in promise
-                        reqs.push(getUri(myurl));
-
-                    });
-
-                    Promise.all(reqs).then(function (results) {
-                        var doc = new jsPDF('p', 'in', [4, 6], true);
-                        results.forEach(function (imgUri, index) {
-                            if (index == 0) {
-
-                            } else if (index > 0 && (index != (results.length - 1))) {
-                                console.log('Add image ' + index);
-                                doc.addImage(results[0], 'PNG', 0, 0, 4, 6, Math.random().toString(35), 'slow');
-                                doc.addImage(imgUri, 'JPEG', 0.25, 1, 3.5, 3.5, Math.random().toString(35), 'slow');
-                                doc.addPage();
-                            } else if (index == (results.length - 1)) {
-                                console.log('Add image ' + index);
-                                doc.addImage(results[0], 'PNG', 0, 0, 4, 6, Math.random().toString(35), 'none');
-                                doc.addImage(imgUri, 'JPEG', 0.25, 1, 3.5, 3.5, Math.random().toString(35), 'none');
-                            }
-                        });
-                        window.open(doc.save('output.pdf'));
+                        self.clicked_images = []; //clear selected images after generating pdf
                     });
                 }
             },
@@ -382,22 +223,6 @@
             }
         });
 
-        function getDataUri(url, callback) {
-            var image = new Image();
-            image.setAttribute('crossOrigin', 'anonymous');
-            image.onload = function () {
-                var canvas = document.createElement('canvas');
-                canvas.width = this.naturalWidth; // or 'width' if you want a special/scaled size
-                canvas.height = this.naturalHeight; // or 'height' if you want a special/scaled size
-
-                canvas.getContext('2d').drawImage(this, 0, 0);
-                // ... or get as Data URI
-                callback(canvas.toDataURL('image/png'));
-            };
-
-            image.src = url;
-        }
-
         function getUri(url) {
             return new Promise(function(resolve, reject) {
                 var image = new Image();
@@ -419,7 +244,6 @@
                 image.src = url;
             });
         }
-
     </script>
 
 </body>
