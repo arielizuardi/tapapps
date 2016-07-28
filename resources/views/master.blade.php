@@ -58,7 +58,7 @@
                 <div class="navbar-form navbar-right">
                     <button @click="printget()" type="button" class="btn btn-primary">Refresh</button>
                     <input size="100" v-model="bg_image" type="text" class="form-control" placeholder="Background Image URL">
-                    <button @click="print()" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-print" aria-hidden="true"></span>&nbsp;&nbsp; Generate PDF</button>
+                    <button @click="printpdfkit()" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-print" aria-hidden="true"></span>&nbsp;&nbsp; Generate PDF</button>
                 </div>
             </div>
         </nav>
@@ -83,6 +83,11 @@
 
     <script src="js/pdfmake.min.js"></script>
     <script src="js/vfs_fonts.js"></script>
+    <script src="js/jspdf.min.js"></script>
+    <script src="js/pdfkit.js"></script>
+    <script src="js/blob-stream.js"></script>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.26/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/vue.resource/0.9.3/vue-resource.min.js"></script>
     <script src="https://www.promisejs.org/polyfills/promise-7.0.4.min.js"></script>
@@ -92,7 +97,7 @@
             el: '#app',
             data: {
                 show_generating: false,
-                bg_image: '',
+                bg_image: 'https://dl.dropboxusercontent.com/s/t6ltq8c3a0fgxjx/FRAME%20URBANGIGS-FINAL-SBY-BATCH2-min.png',
                 keywords: '',
                 cursor: '',
                 images: [],
@@ -100,7 +105,7 @@
             },
             methods: {
                 performSearch: function() {
-                    var self = this
+                    var self = this;
                     let build_url = '/search?q=%23' + self.keywords;
                     Vue.http.get(build_url).then(
                             function (response) {
@@ -237,6 +242,121 @@
                     });
 
                     //self.show_generating = false;
+                },
+                printpdfkit: function() {
+
+                    var self = this;
+                    var urls = [];
+                    self.show_generating = true;
+                    self.clicked_images.forEach(function (image){
+                        urls.push(image.url);
+                    });
+
+                    var bg_image = self.bg_image;
+                    //put bg image to first element in urls
+                    urls.unshift(bg_image);
+
+                    var reqs = [];
+                    urls.forEach(function (myurl) {
+                        //add function to be called in promise
+                        reqs.push(getUri(myurl));
+
+                    });
+
+                    var saveData = (function () {
+                        var a = document.createElement("a");
+                        document.body.appendChild(a);
+                        a.style = "display: none";
+                        return function (blob, fileName) {
+                            var url = window.URL.createObjectURL(blob);
+                            window.open(url);
+                            //a.href = url;
+                            //a.download = fileName;
+                            //a.click();
+                            window.URL.revokeObjectURL(url);
+                        };
+                    }());
+
+                    Promise.all(reqs).then(function (results) {
+                        var doc = new PDFDocument({
+                            size: [288, 432],
+                            margins : { // by default, all are 72
+                                top: 0,
+                                bottom: 0,
+                                left: 0,
+                                right: 0
+                            },
+                            layout: 'portrait'
+                        });
+
+                        var stream = doc.pipe(blobStream());
+
+                        results.forEach(function (imgUri, index) {
+                            if (index == 0) {
+
+                            } else if (index == (results.length - 1)) {
+                                doc.image(results[0], 0, 0, { width: 288});
+                                doc.image(imgUri, 18, 72, { width: 252});
+
+                            } else {
+                                doc.image(results[0], 0, 0, { width: 288});
+                                doc.image(imgUri, 18, 72, { width: 252});
+                                doc.addPage();
+                            }
+                        });
+
+                        doc.end();
+
+                        stream.on('finish', function() {
+
+                            var blob = stream.toBlob('application/pdf');
+                            saveData(blob, 'aa.pdf');
+
+                            // iframe.src = stream.toBlobURL('application/pdf');
+                        });
+
+                        self.show_generating = false;
+
+                    });
+
+                },
+                printjspdf: function () {
+                    var self = this;
+                    var urls = [];
+
+                    self.clicked_images.forEach(function (image){
+                        urls.push(image.url);
+                    });
+
+                    var bg_image = self.bg_image;
+                    //put bg image to first element in urls
+                    urls.unshift(bg_image);
+
+                    var reqs = [];
+                    urls.forEach(function (myurl) {
+                        //add function to be called in promise
+                        reqs.push(getUri(myurl));
+
+                    });
+
+                    Promise.all(reqs).then(function (results) {
+                        var doc = new jsPDF('p', 'in', [4, 6], true);
+                        results.forEach(function (imgUri, index) {
+                            if (index == 0) {
+
+                            } else if (index > 0 && (index != (results.length - 1))) {
+                                console.log('Add image ' + index);
+                                doc.addImage(results[0], 'PNG', 0, 0, 4, 6, Math.random().toString(35), 'slow');
+                                doc.addImage(imgUri, 'JPEG', 0.25, 1, 3.5, 3.5, Math.random().toString(35), 'slow');
+                                doc.addPage();
+                            } else if (index == (results.length - 1)) {
+                                console.log('Add image ' + index);
+                                doc.addImage(results[0], 'PNG', 0, 0, 4, 6, Math.random().toString(35), 'none');
+                                doc.addImage(imgUri, 'JPEG', 0.25, 1, 3.5, 3.5, Math.random().toString(35), 'none');
+                            }
+                        });
+                        window.open(doc.save('output.pdf'));
+                    });
                 }
             },
             components: {
