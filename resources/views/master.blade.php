@@ -93,7 +93,7 @@
             el: '#app',
             data: {
                 show_generating: false,
-                bg_image: 'https://dl.dropboxusercontent.com/s/t6ltq8c3a0fgxjx/FRAME%20URBANGIGS-FINAL-SBY-BATCH2-min.png',
+                bg_image: 'https://dl.dropboxusercontent.com/s/wauuv6laqfchhl5/ffffff.jpg?dl=0', //default white
                 keywords: '',
                 cursor: '',
                 images: [],
